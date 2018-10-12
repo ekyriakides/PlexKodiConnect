@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, unicode_literals
+from .pympler import tracker
+import gc
 from logging import getLogger
 from threading import Thread
 import Queue
@@ -297,6 +299,7 @@ class LibrarySync(Thread):
         return True
 
     def _full_sync(self):
+        tr = tracker.SummaryTracker()
         process = [self.plex_movies, self.plex_tv_show]
         if state.ENABLE_MUSIC:
             process.append(self.plex_music)
@@ -305,7 +308,7 @@ class LibrarySync(Thread):
         for kind in process:
             if self.suspend_item_sync() or not kind():
                 return False
-
+            LOG.error(tr.diff())
         # Let kodi update the views in any case, since we're doing a full sync
         update_library(video=True, music=state.ENABLE_MUSIC)
 
