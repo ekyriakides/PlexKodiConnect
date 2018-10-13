@@ -4,11 +4,11 @@ Provide saving, loading and presenting gathered `ClassTracker` statistics.
 
 import os
 import sys
-from pympler.util.compat import pickle
+from .util.compat import pickle
 from copy import deepcopy
-from pympler.util.stringutils import trunc, pp, pp_timestamp
+from .util.stringutils import trunc, pp, pp_timestamp
 
-from pympler.asizeof import Asized
+from .asizeof import Asized
 
 
 __all__ = ["Stats", "ConsoleStats", "HtmlStats"]

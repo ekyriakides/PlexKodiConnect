@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, unicode_literals
-from .pympler import tracker
-import gc
+import random
+from .pympler import tracker, classtracker
+from .objgraph import objgraph
 from logging import getLogger
 from threading import Thread
 import Queue
@@ -299,16 +300,32 @@ class LibrarySync(Thread):
         return True
 
     def _full_sync(self):
-        tr = tracker.SummaryTracker()
         process = [self.plex_movies, self.plex_tv_show]
         if state.ENABLE_MUSIC:
             process.append(self.plex_music)
 
+        tr = tracker.SummaryTracker()
+        objgraph.show_growth(limit=30)
         # Do the processing
         for kind in process:
             if self.suspend_item_sync() or not kind():
                 return False
-            LOG.error(tr.diff())
+        # gc.collect(2)
+        diff = tr.diff()
+        diff = [x for x in diff if abs(x[1]) > 10]
+        LOG.error('Tracediff: %s', diff)
+        LOG.error('objgraph.show_growth:')
+        objgraph.show_growth(limit=30)
+        LOG.error('=======================================')
+        objgraph.show_most_common_types(limit=50)
+        path = 'C:\\Users\\Tom\\AppData\\Local\\Temp\\'
+        for kind in ('SSLContext', 'VerifiedHTTPSConnection', 'SSLSocket', 'HTTPMessage', 'HTTPResponse'):
+            objgraph.show_backrefs(random.choice(objgraph.by_type(kind)),
+                                   max_depth=10,
+                                   filename='%spkc_object_%s.dot' % (path, kind))
+        LOG.error('=======================================')
+        leaky = objgraph.get_leaking_objects()
+        LOG.error(leaky[:10])
         # Let kodi update the views in any case, since we're doing a full sync
         update_library(video=True, music=state.ENABLE_MUSIC)
 

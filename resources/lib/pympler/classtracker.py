@@ -14,12 +14,11 @@ from threading import Thread, Lock
 from time import sleep, time
 from weakref import ref as weakref_ref
 
-from pympler.classtracker_stats import ConsoleStats
-from pympler.util.compat import instancemethod
-from pympler.util.stringutils import safe_repr
+from .classtracker_stats import ConsoleStats
+from .util.compat import instancemethod
+from .util.stringutils import safe_repr
 
-import pympler.asizeof as asizeof
-import pympler.process
+import asizeof
 
 
 __all__ = ["ClassTracker"]
