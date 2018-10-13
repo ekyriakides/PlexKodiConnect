@@ -95,13 +95,14 @@ class ThreadedProcessMetadata(Thread):
                     objgraph.show_growth(limit=30)
                     path = '/storage/.kodi/userdata/addon_data/plugin.video.plexkodiconnect/temp/'
                     kind = 'xml.etree.ElementTree.Element'
-                    try:
-                        objgraph.show_backrefs(random.choice(objgraph.by_type(kind)),
-                                               max_depth=10,
-                                               filename='%spkc_object_%s.dot' % (path, kind))
-                    except:
-                        import traceback
-                        LOG.warn(traceback.format_exc())
+                    for _ in range(0, 10):
+                        try:
+                            objgraph.show_backrefs(random.choice(objgraph.by_type(kind)),
+                                                   max_depth=10,
+                                                   filename='%spkc_object_%s_%s.dot' % (path, kind, i))
+                        except:
+                            import traceback
+                            LOG.warn(traceback.format_exc())
                     break
         self.terminate_now()
         LOG.debug('Processing thread terminated')
