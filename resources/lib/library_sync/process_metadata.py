@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, unicode_literals
 from logging import getLogger
+import random
 from threading import Thread
 from Queue import Empty
 from xbmc import sleep
+from ..objgraph import objgraph
 
 from .. import utils
 from .. import itemtypes
@@ -60,6 +62,8 @@ class ThreadedProcessMetadata(Thread):
         # cache local variables because it's faster
         queue = self.queue
         stopped = self.stopped
+        i = 0
+        objgraph.show_growth(limit=30)
         with item_fct() as item_class:
             while stopped() is False:
                 # grabs item from queue
@@ -69,6 +73,7 @@ class ThreadedProcessMetadata(Thread):
                     sleep(20)
                     continue
                 # Do the work
+                i += 1
                 item_method = getattr(item_class, item['method'])
                 if item.get('children') is not None:
                     item_method(item['xml'][0],
@@ -84,5 +89,19 @@ class ThreadedProcessMetadata(Thread):
                     sync_info.PROCESS_METADATA_COUNT += 1
                     sync_info.PROCESSING_VIEW_NAME = item['title']
                 queue.task_done()
+                if i == 200:
+                    i = 0
+                    LOG.error('objgraph.show_growth:')
+                    objgraph.show_growth(limit=30)
+                    path = 'C:\\Users\\Tom\\AppData\\Local\\Temp\\'
+                    kind = 'xml.etree.ElementTree.Element'
+                    try:
+                        objgraph.show_backrefs(random.choice(objgraph.by_type(kind)),
+                                               max_depth=10,
+                                               filename='%spkc_object_%s.dot' % (path, kind))
+                    except:
+                        import traceback
+                        LOG.warn(traceback.format_exc())
+                    break
         self.terminate_now()
         LOG.debug('Processing thread terminated')
