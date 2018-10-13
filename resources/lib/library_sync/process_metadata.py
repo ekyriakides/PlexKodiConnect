@@ -89,11 +89,11 @@ class ThreadedProcessMetadata(Thread):
                     sync_info.PROCESS_METADATA_COUNT += 1
                     sync_info.PROCESSING_VIEW_NAME = item['title']
                 queue.task_done()
-                if i == 200:
+                if i == 1000:
                     i = 0
                     LOG.error('objgraph.show_growth:')
                     objgraph.show_growth(limit=30)
-                    path = 'C:\\Users\\Tom\\AppData\\Local\\Temp\\'
+                    path = '/storage/.kodi/userdata/addon_data/plugin.video.plexkodiconnect/temp/'
                     kind = 'xml.etree.ElementTree.Element'
                     try:
                         objgraph.show_backrefs(random.choice(objgraph.by_type(kind)),
