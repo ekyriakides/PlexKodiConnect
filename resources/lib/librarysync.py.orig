@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, unicode_literals
+import random
+from .pympler import tracker, classtracker
+from .objgraph import objgraph
 from logging import getLogger
 from threading import Thread
 import Queue
@@ -301,11 +304,28 @@ class LibrarySync(Thread):
         if state.ENABLE_MUSIC:
             process.append(self.plex_music)
 
+        tr = tracker.SummaryTracker()
+        objgraph.show_growth(limit=30)
         # Do the processing
         for kind in process:
             if self.suspend_item_sync() or not kind():
                 return False
-
+        # gc.collect(2)
+        diff = tr.diff()
+        diff = [x for x in diff if abs(x[1]) > 10]
+        LOG.error('Tracediff: %s', diff)
+        LOG.error('objgraph.show_growth:')
+        objgraph.show_growth(limit=30)
+        LOG.error('=======================================')
+        objgraph.show_most_common_types(limit=50)
+        path = 'C:\\Users\\Tom\\AppData\\Local\\Temp\\'
+        for kind in ('SSLContext', 'VerifiedHTTPSConnection', 'SSLSocket', 'HTTPMessage', 'HTTPResponse'):
+            objgraph.show_backrefs(random.choice(objgraph.by_type(kind)),
+                                   max_depth=10,
+                                   filename='%spkc_object_%s.dot' % (path, kind))
+        LOG.error('=======================================')
+        leaky = objgraph.get_leaking_objects()
+        LOG.error(leaky[:10])
         # Let kodi update the views in any case, since we're doing a full sync
         update_library(video=True, music=state.ENABLE_MUSIC)
 
@@ -688,7 +708,11 @@ class LibrarySync(Thread):
         sync_info.PROCESSING_VIEW_NAME = ''
         # Populate queue: GetMetadata
         for _ in range(0, len(self.updatelist)):
+<<<<<<< HEAD
+            download_queue.put(self.updatelist.pop())
+=======
             download_queue.put(self.updatelist.pop(0))
+>>>>>>> master
         # Spawn GetMetadata threads for downloading
         threads = []
         for _ in range(min(state.SYNC_THREAD_NUMBER, item_number)):
@@ -731,6 +755,18 @@ class LibrarySync(Thread):
             except:
                 pass
         LOG.debug("Sync threads finished")
+<<<<<<< HEAD
+        if (utils.settings('FanartTV') == 'true' and
+                item_class in ('Movies', 'TVShows')):
+            for item in self.updatelist:
+                if item['plex_type'] in (v.PLEX_TYPE_MOVIE, v.PLEX_TYPE_SHOW):
+                    self.fanartqueue.put({
+                        'plex_id': item['plex_id'],
+                        'plex_type': item['plex_type'],
+                        'refresh': False
+                    })
+=======
+>>>>>>> master
 
     @utils.log_time
     def plex_movies(self):
