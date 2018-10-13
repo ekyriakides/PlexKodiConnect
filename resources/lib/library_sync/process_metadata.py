@@ -95,11 +95,11 @@ class ThreadedProcessMetadata(Thread):
                     objgraph.show_growth(limit=30)
                     path = '/storage/.kodi/userdata/addon_data/plugin.video.plexkodiconnect/temp/'
                     kind = 'xml.etree.ElementTree.Element'
-                    for _ in range(0, 10):
+                    for x in range(0, 10):
                         try:
                             objgraph.show_backrefs(random.choice(objgraph.by_type(kind)),
                                                    max_depth=10,
-                                                   filename='%spkc_object_%s_%s.dot' % (path, kind, i))
+                                                   filename='%spkc_object_%s_%s.dot' % (path, kind, x))
                         except:
                             import traceback
                             LOG.warn(traceback.format_exc())
