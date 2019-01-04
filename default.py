@@ -141,7 +141,8 @@ class Main():
             entrypoint.hub(params.get('type'))
 
         else:
-            entrypoint.show_main_menu(content_type=params.get('content_type'))
+            from resources.lib import widgets
+            widgets.Entrypoint()
 
     @staticmethod
     def play():

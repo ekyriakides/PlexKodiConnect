@@ -90,6 +90,7 @@ class VideoNodes(object):
         nodeXML = "%sindex.xml" % nodepath
         # Set windows property
         path = "library://video/Plex-%s/" % dirname
+        path = 'plugin://plugin.video.plexkodiconnect/?section_id=%s' % dirname
         for i in range(1, indexnumber):
             # Verify to make sure we don't create duplicates
             if utils.window('Plex.nodes.%s.index' % i) == path:
@@ -248,6 +249,7 @@ class VideoNodes(object):
                 # Custom query
                 path = ("plugin://plugin.video.plexkodiconnect/?id=%s&mode=recentepisodes&type=%s&tagname=%s&limit=%s"
                     % (viewid, mediatype, tagname, limit))
+                path = 'plugin://script.skin.helper.widgets/?action=recent&mediatype=tvshows&reload=$INFO[Window(Home).Property(widgetreload-tvshows)]'
             elif v.KODIVERSION == 14 and nodetype == "inprogressepisodes":
                 # Custom query
                 path = "plugin://plugin.video.plexkodiconnect/?id=%s&mode=inprogressepisodes&limit=%s" % (tagname, limit)
@@ -273,6 +275,19 @@ class VideoNodes(object):
                 else:
                     windowpath = "ActivateWindow(Video,%s,return)" % path
 
+            typus = {
+                "all": 'listing',
+                "recent": 'recent',
+                "recentepisodes": 'recent',
+                "inprogress": 'inprogress',
+                "inprogressepisodes": 'inprogress',
+                "sets": 'sets',  # TODO
+                "genres": 'browsegenres',
+                "random": 'random',
+                "recommended": 'recommended',
+                "ondeck": 'ondeck',  # TODO
+                'browsefiles': 'browsefiles'  # TODO
+            }
             if nodetype == "all":
 
                 if viewtype == "mixed":
@@ -285,12 +300,33 @@ class VideoNodes(object):
                 utils.window('%s.path' % embynode, value=windowpath)
                 utils.window('%s.content' % embynode, value=path)
                 utils.window('%s.type' % embynode, value=mediatype)
-            else:
-                embynode = "Plex.nodes.%s.%s" % (indexnumber, nodetype)
+                # Also add a sub-node to browse everything
+                embynode = "Plex.nodes.%s.%s" % (viewid, node)
+                nodetype = typus[nodetype]
+                path = (('plugin://%s/?'
+                         'action=%s&'
+                         'mediatype=%s&'
+                         'tag=%s&'
+                         'reload=$INFO[Window(Home).Property(widgetreload-%s)]')
+                        % (v.ADDON_ID, nodetype, mediatype, tagname, mediatype))
                 utils.window('%s.title' % embynode, value=label)
-                utils.window('%s.path' % embynode, value=windowpath)
-                utils.window('%s.content' % embynode, value=path)
-
+                utils.window('%s.path' % embynode, value=path)
+                utils.window('%s.type' % embynode, value=mediatype)
+            else:
+                nodetype = typus[nodetype]
+                path = (('plugin://script.skin.helper.widgets/?'
+                         'action=%s&'
+                         'mediatype=%s&'
+                         'tag=%s&'
+                         'reload=$INFO[Window(Home).Property(widgetreload-%s)]')
+                        % (nodetype, mediatype, tagname, mediatype))
+                embynode = "Plex.nodes.%s.%s" % (viewid, node)
+                utils.window('%s.title' % embynode, value=label)
+                utils.window('%s.path' % embynode, value=path)
+                utils.window('%s.type' % embynode, value=mediatype)
+                LOG.debug('Testing: %s', '%s.path' % embynode)
+            utils.window('%s.title' % embynode, value=label)
+            utils.window('%s.path' % embynode, value=path)
             if mediatype == "photos":
                 # For photos, we do not create a node in videos but we do want
                 # the window props to be created. To do: add our photos nodes to
@@ -410,8 +446,8 @@ class VideoNodes(object):
                 utils.indent(root)
             except:
                 pass
-            etree.ElementTree(root).write(path_ops.encode_path(nodeXML),
-                                          encoding="UTF-8")
+            # etree.ElementTree(root).write(path_ops.encode_path(nodeXML),
+            #                               encoding="UTF-8")
 
     def singleNode(self, indexnumber, tagname, mediatype, itemtype):
         cleantagname = utils.normalize_nodes(tagname)
