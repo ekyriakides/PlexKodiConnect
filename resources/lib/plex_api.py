@@ -35,7 +35,9 @@ from logging import getLogger
 from re import sub
 from urllib import urlencode, unquote, quote
 from urlparse import parse_qsl
+
 from xbmcgui import ListItem
+from metadatautils import MetadataUtils
 
 from .plex_db import PlexDB
 from .kodi_db import KodiVideoDB, KodiMusicDB
@@ -148,6 +150,19 @@ class API(object):
                                          self.plex_type(),
                                          omit_check=True)
         return path
+
+    def directory_path(self, section_id=None):
+        key = self.item.get('fastKey', self.item.get('key'))
+        if not key.startswith('/'):
+            key = '/library/sections/%s/%s' % (section_id, key)
+        params = {
+            'mode': 'browseplex',
+            'key': key,
+            'plex_type': self.plex_type()
+        }
+        if section_id:
+            params['id'] = section_id
+        return 'plugin://%s/?%s' % (v.ADDON_ID, urlencode(params))
 
     def path_and_plex_id(self):
         """
@@ -334,6 +349,26 @@ class API(object):
             'Rating': rating,
             'UserRating': userrating
         }
+
+    def leave_count(self):
+        """
+        Returns the following dict or None
+        {
+            'totalepisodes': unicode('leafCount'),
+            'watchedepisodes': unicode('viewedLeafCount'),
+            'unwatchedepisodes': unicode(totalepisodes - watchedepisodes)
+        }
+        """
+        try:
+            total = int(self.item.attrib['leafCount'])
+            watched = int(self.item.attrib['viewedLeafCount'])
+            return {
+                'totalepisodes': unicode(total),
+                'watchedepisodes': unicode(watched),
+                'unwatchedepisodes': unicode(total - watched)
+            }
+        except (KeyError, TypeError):
+            pass
 
     def collection_list(self):
         """
@@ -594,7 +629,7 @@ class API(object):
 
     def premiere_date(self):
         """
-        Returns the "originallyAvailableAt" or None
+        Returns the "originallyAvailableAt", e.g. "2018-11-16" or None
         """
         return self.item.get('originallyAvailableAt')
 
@@ -1577,6 +1612,97 @@ class API(object):
 
         Returns XBMC listitem for this PMS library item
         """
+        title = self.title()
+        typus = self.plex_type()
+
+        if listitem is None:
+            listitem = ListItem(title)
+        else:
+            listitem.setLabel(title)
+        # Necessary; Kodi won't start video otherwise!
+        listitem.setProperty('IsPlayable', 'true')
+        # Video items, e.g. movies and episodes or clips
+        people = self.people()
+        userdata = self.userdata()
+        metadata = {
+            'genre': self.genre_list(),
+            'country': self.country_list(),
+            'year': self.year(),
+            'rating': self.audience_rating(),
+            'playcount': userdata['PlayCount'],
+            'cast': people['Cast'],
+            'director': people['Director'],
+            'plot': self.plot(),
+            'sorttitle': self.sorttitle(),
+            'duration': userdata['Runtime'],
+            'studio': self.music_studio_list(),
+            'tagline': self.tagline(),
+            'writer': people.get('Writer'),
+            'premiered': self.premiere_date(),
+            'dateadded': self.date_created(),
+            'lastplayed': userdata['LastPlayedDate'],
+            'mpaa': self.content_rating(),
+            'aired': self.premiere_date(),
+        }
+        # Do NOT set resumetime - otherwise Kodi always resumes at that time
+        # even if the user chose to start element from the beginning
+        # listitem.setProperty('resumetime', str(userdata['Resume']))
+        listitem.setProperty('totaltime', str(userdata['Runtime']))
+
+        if typus == v.PLEX_TYPE_EPISODE:
+            metadata['mediatype'] = 'episode'
+            _, _, show, season, episode = self.episode_data()
+            season = -1 if season is None else int(season)
+            episode = -1 if episode is None else int(episode)
+            metadata['episode'] = episode
+            metadata['sortepisode'] = episode
+            metadata['season'] = season
+            metadata['sortseason'] = season
+            metadata['tvshowtitle'] = show
+            if season and episode:
+                if append_sxxexx is True:
+                    title = "S%.2dE%.2d - %s" % (season, episode, title)
+            if append_show_title is True:
+                title = "%s - %s " % (show, title)
+            if append_show_title or append_sxxexx:
+                listitem.setLabel(title)
+        elif typus == v.PLEX_TYPE_MOVIE:
+            metadata['mediatype'] = 'movie'
+        else:
+            # E.g. clips, trailers, ...
+            pass
+
+        plex_id = self.plex_id()
+        listitem.setProperty('plexid', str(plex_id))
+        with PlexDB() as plexdb:
+            db_item = plexdb.item_by_id(plex_id, self.plex_type())
+        if db_item:
+            metadata['dbid'] = db_item['kodi_id']
+        metadata['title'] = title
+        # Expensive operation
+        listitem.setInfo('video', infoLabels=metadata)
+        try:
+            # Add context menu entry for information screen
+            listitem.addContextMenuItems([(utils.lang(30032),
+                                           'XBMC.Action(Info)',)])
+        except TypeError:
+            # Kodi fuck-up
+            pass
+        return listitem
+
+    def _create_folder_listitem(self, listitem=None):
+        """
+        Use for video items only
+        Call on a child level of PMS xml response (e.g. in a for loop)
+
+        listitem        : existing xbmcgui.ListItem to work with
+                          otherwise, a new one is created
+        append_show_title : True to append TV show title to episode title
+        append_sxxexx    : True to append SxxExx to episode title
+
+        Returns XBMC listitem for this PMS library item
+        """
+        metadatautils = MetadataUtils()
         title = self.title()
         typus = self.plex_type()
 

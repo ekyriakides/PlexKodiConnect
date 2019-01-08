@@ -9,6 +9,11 @@ from sqlite3 import connect, OperationalError
 from datetime import datetime
 from unicodedata import normalize
 from threading import Lock
+try:
+    from multiprocessing.pool import ThreadPool
+    SUPPORTS_POOL = True
+except Exception:
+    SUPPORTS_POOL = False
 # Originally tried faster cElementTree, but does NOT work reliably with Kodi
 import xml.etree.ElementTree as etree
 import defusedxml.ElementTree as defused_etree  # etree parse unsafe
@@ -18,6 +23,7 @@ from urllib import quote_plus
 import hashlib
 import re
 import gc
+
 import xbmc
 import xbmcaddon
 import xbmcgui
@@ -485,6 +491,24 @@ def wipe_database():
         LOG.warn('Need to restart Kodi before filling Kodi DB again')
         settings('kodi_db_has_been_wiped_clean', value='true')
         reboot_kodi()
+
+
+def process_method_on_list(method_to_run, items):
+    '''helper method that processes a method on each listitem with pooling if the system supports it'''
+    all_items = []
+    if SUPPORTS_POOL:
+        pool = ThreadPool()
+        try:
+            all_items = pool.map(method_to_run, items)
+        except Exception:
+            # catch exception to prevent threadpool running forever
+            ERROR(notify=True)
+        pool.close()
+        pool.join()
+    else:
+        all_items = [method_to_run(items) for item in items]
+    all_items = filter(None, all_items)
+    return all_items
 
 
 def init_dbs():

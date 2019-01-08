@@ -61,6 +61,7 @@ class Main():
 
         elif mode == 'browseplex':
             entrypoint.browse_plex(key=params.get('key'),
+                                   plex_type=params.get('plex_type'),
                                    plex_section_id=params.get('id'))
 
         elif mode == 'watchlater':
