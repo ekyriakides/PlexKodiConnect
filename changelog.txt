@@ -1,3 +1,99 @@
+version 2.5.15 (beta only):
+- Make PKC potentially compatible with several database schemas
+- Support for Kodi 18 Leia RC 5.2
+- Increase number of attempts to write to Kodi DB
+- Further increase database sync resiliance
+
+version 2.5.14 (beta only):
+Fix rare OperationalError: Locked Database
+
+version 2.5.13 (beta only):
+- Fix playback not starting up
+- Fix Plex channels and watch later not working
+- Hopefully fix playstate not being synced to PMS
+
+version 2.5.12 (beta only):
+- WARNING: You will need to reset the Kodi database!
+- New option to not use Plex artwork
+- Add-on paths: Fix resume if playback not initiated with PKC
+- Increase database resiliance with sqlite WAL mode
+
+version 2.5.11 (beta only):
+- Direct Paths: Fix AttributeError for widgets
+
+version 2.5.10 (beta only):
+- Enable Plex Hub listings to be used for widgets
+- Finally fix deleteting of items from PMS not working
+- Catch sqlite OperationalError for websocket messages
+- Revert "Increase database timeouts"
+
+version 2.5.9 (beta only):
+- Compatibility with Kodi 18 RC 4
+- New setting to escape paths e.g. for HTTP direct paths
+- Ensure path replacement never contains trailing (back)slash
+- Leia: fix resetting of videoplayer autoplay next item 
+- Don't store identical show artwork for seasons
+- Close DB connections while caching images
+- Increase database timeouts
+- Improve logging for seasons
+
+version 2.5.8 (beta only):
+- Hopefully fix Kodi crashing on playback start
+- Fix video resuming from old resume point
+- Fix database is locked
+- Faster way to initialize playlists on the Plex side
+- Fix PKC recreating playlists too often
+- Shutdown playlist sync if necessary
+
+version 2.5.7 (beta only):
+- WARNING: You will need to reset the Kodi database!
+- Increase timeout for database connections
+- Fix music DB not being wiped on database reset
+- Improve Plex playQueue resiliance
+
+version 2.5.6 (beta only):
+- Fix many items not getting synced
+- Fix episodes not being synced to due a missing season
+- Fix some very few items not being synced
+- Fix ValueError during sync due to missing Plex timestamp
+- Fix resume for episodes for add-on paths
+- Fix movies not showing up on switching PMS
+- Finish full syncs during playbacks, don't start new ones
+- Fix AttributeError when a playlist disappeared
+- Close sync dialog if video playback starts
+- Don't show sync messages while Kodi is playing something
+- Only marking full sync as successful if that is indeed the case
+- Optimize code
+
+version 2.5.5 (beta only):
+- Fix OperationalError and PKC not starting up
+
+version 2.5.4 (beta only):
+- Fix a couple of issues related to episodes
+- Fix permanent missing library items if PMS failed to send a single response
+- Fix OperationalError: enforce Kodi restart with clean DB once
+- Fix switching PMS not recognizing when old PMS is selected
+- Fix PKC not automatically connecting to changed PMS IP on startup
+- Remove message "Full library sync finished"
+- Fix PKC not automatically connecting to changed PMS IP on startup
+- Remove cProfile program metrics measurements
+
+version 2.5.3 (beta only):
+- Fix Plex sections not showing up or disappearing
+
+version 2.5.2 (beta only):
+- Rewire library sync
+- Optimize sqlite transactions
+- Replace annoying sync message with PKC settings info
+- Add PKC settings status indication for caching
+- Fix KeyError when synching playlists
+- Fix ImportError for Plex Companion gdm issues
+- Increase database connection cache size
+- Force-Reboot Kodi immediately if sqlite PRAGMA WAL causes errors
+- Force a full sync on switching Plex username
+- Fix wierd behavior upon switching to another PMS
+- More bugfixes and code optimizations
+
 version 2.5.1 (beta only):
 - Fix OSError on resetting the database
 
